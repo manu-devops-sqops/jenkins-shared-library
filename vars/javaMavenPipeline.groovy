@@ -42,6 +42,7 @@ def call(Map config) {
             """
         }
             }
+            }
 
             stage('Check SonarQube Quality Gate') {
                 steps {
