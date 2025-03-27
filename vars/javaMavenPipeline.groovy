@@ -2,6 +2,11 @@ def call(Map config) {
     pipeline {
         agent any
 
+        environment {
+            DOCKER_IMAGE = "your-dockerhub-username/${config.imageName}"
+            IMAGE_TAG = "latest"
+        }
+
         stages {
             stage('Checkout Code') {
                 steps {
@@ -23,18 +28,21 @@ def call(Map config) {
                     sh 'mvn compile'
                 }
             }
-stage('Build') { // ✅ New Build Stage Added
+
+            stage('Build') {
                 steps {
                     echo "Building the project..."
                     sh 'mvn package -DskipTests'
                 }
             }
-            stage('Run test') {
+
+            stage('Run Tests') {
                 steps {
                     echo "Running tests..."
                     sh 'mvn test'
                 }
             }
+
             stage('SonarQube Analysis') {
                 steps {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
@@ -72,6 +80,37 @@ stage('Build') { // ✅ New Build Stage Added
                                 error "Pipeline failed: Quality Gate did not pass!"
                             }
                         }
+                    }
+                }
+            }
+
+            stage('Build Docker Image') {  // ✅ Step 1: Build Docker Image
+                steps {
+                    script {
+                        echo "Building Docker image..."
+                        sh "docker build -t $DOCKER_IMAGE:$IMAGE_TAG ."
+                    }
+                }
+            }
+
+            stage('Push Docker Image to Docker Hub') {  // ✅ Step 2: Push Docker Image
+                steps {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        script {
+                            echo "Logging in to Docker Hub..."
+                            sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                            echo "Pushing Docker image..."
+                            sh "docker push $DOCKER_IMAGE:$IMAGE_TAG"
+                        }
+                    }
+                }
+            }
+
+            stage('Run Docker Container') {  // ✅ Step 3: Run Docker Container
+                steps {
+                    script {
+                        echo "Running Docker container..."
+                        sh "docker run -d -p 8080:8080 --name my-container $DOCKER_IMAGE:$IMAGE_TAG"
                     }
                 }
             }
