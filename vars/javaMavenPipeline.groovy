@@ -10,24 +10,24 @@ def call(Map config) {
                 }
             }
 
-            // stage('Clean') {
-            //     steps {
-            //         echo "Running mvn clean..."
-            //         sh 'mvn clean'
-            //     }
-            // }
+            stage('Clean') {
+                steps {
+                    echo "Running mvn clean..."
+                    sh 'mvn clean'
+                }
+            }
 
-            // stage('Compile') {
-            //     steps {
-            //         echo "Compiling source code..."
-            //         sh 'mvn compile'
-            //     }
-            // }
+            stage('Compile') {
+                steps {
+                    echo "Compiling source code..."
+                    sh 'mvn compile'
+                }
+            }
 
-            stage('Run build') {
+            stage('Run test') {
                 steps {
                     echo "Running tests..."
-                    sh 'mvn clean install -DskipTests'
+                    sh 'mvn test'
                 }
             }
             stage('SonarQube Analysis') {
