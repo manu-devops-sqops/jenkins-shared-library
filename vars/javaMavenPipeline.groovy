@@ -1,12 +1,10 @@
-// vars/jenkinsPipeline.groovy
-
 def call(Map config) {
     pipeline {
         agent any
 
         environment {
             DOCKER_IMAGE = "your-dockerhub-username/${config.imageName ?: 'default-image'}"
-            IMAGE_TAG = config.imageTag ?: "latest"
+            IMAGE_TAG = "latest"
         }
 
         stages {
@@ -53,7 +51,7 @@ def call(Map config) {
                             sh """
                                 mvn sonar:sonar \
                                 -Dsonar.projectKey=${config.sonarProjectKey} \
-                                -Dsonar.host.url=${config.sonarHostUrl} \
+                                -Dsonar.host.url=http://34.207.131.166:9000 \
                                 -Dsonar.login=${SONAR_TOKEN}
                             """
                         }
@@ -74,7 +72,7 @@ def call(Map config) {
                             def sonarCheck = sh(
                                 script: """
                                     curl -s -H "Authorization: Bearer ${SONAR_TOKEN}" \
-                                    "${config.sonarHostUrl}/api/qualitygates/project_status?projectKey=${config.sonarProjectKey}" | jq -r .projectStatus.status
+                                    "http://34.207.131.166:9000/api/qualitygates/project_status?projectKey=${config.sonarProjectKey}" | jq -r .projectStatus.status
                                 """,
                                 returnStdout: true
                             ).trim()
@@ -119,11 +117,11 @@ def call(Map config) {
                 steps {
                     script {
                         echo "Stopping existing container if running..."
-                        sh "docker stop ${config.containerName} || true"
-                        sh "docker rm ${config.containerName} || true"
+                        sh "docker stop my-container || true"
+                        sh "docker rm my-container || true"
 
-                        echo "Running Docker container on port ${config.containerPort ?: '8081'}..."
-                        sh "docker run -d -p ${config.containerPort ?: '8081'}:8080 --name ${config.containerName} ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                        echo "Running Docker container on port 8081..."
+                        sh "docker run -d -p 8081:8080 --name my-container ${DOCKER_IMAGE}:${IMAGE_TAG}"
                     }
                 }
             }
