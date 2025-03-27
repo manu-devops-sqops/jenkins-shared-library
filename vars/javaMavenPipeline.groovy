@@ -98,32 +98,33 @@ def call(Map config) {
 
             stage('Push Docker Image to Docker Hub') {
                 steps {
-        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            script {
-                echo "Logging in to Docker Hub..."
-                sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        script {
+                            echo "Logging in to Docker Hub..."
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
 
-                echo "Tagging the image..."
-                sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_USER}/${config.imageName}:${IMAGE_TAG}"
+                            echo "Tagging the image..."
+                            sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_USER}/${config.imageName}:${IMAGE_TAG}"
 
-                echo "Pushing Docker image..."
-                sh "docker push ${DOCKER_USER}/${config.imageName}:${IMAGE_TAG}"
-            }
-        }
-    }
+                            echo "Pushing Docker image..."
+                            sh "docker push ${DOCKER_USER}/${config.imageName}:${IMAGE_TAG}"
+                        }
+                    }
+                }
             }
 
             stage('Run Docker Container') {
                 steps {
-        script {
-            echo "Stopping existing container if running..."
-            sh "docker stop my-container || true"
-            sh "docker rm my-container || true"
+                    script {
+                        echo "Stopping existing container if running..."
+                        sh "docker stop my-container || true"
+                        sh "docker rm my-container || true"
 
-            echo "Running Docker container on port 8081..."
-            sh "docker run -d -p 8081:8080 --name my-container ${DOCKER_IMAGE}:${IMAGE_TAG}"
-        }
-    }
+                        echo "Running Docker container on port 8081..."
+                        sh "docker run -d -p 8081:8080 --name my-container ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    }
+                }
+            }
         }
 
         post {
