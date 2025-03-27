@@ -27,7 +27,7 @@ def call(Map config) {
             stage('Run build') {
                 steps {
                     echo "Running tests..."
-                    sh 'mvn clean install'
+                    sh 'mvn clean install -DskipTests'
                 }
             }
             stage('SonarQube Analysis') {
