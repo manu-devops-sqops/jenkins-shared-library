@@ -33,15 +33,15 @@ def call(Map config) {
 
             stage('SonarQube Analysis') {
                 steps {
-        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-            sh """
-                mvn sonar:sonar \
-                -Dsonar.projectKey=${config.sonarProjectKey} \
-                -Dsonar.host.url=http://34.207.131.166:9000 \
-                -Dsonar.login=$SONAR_TOKEN
-            """
-        }
-            }
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        sh """
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=${config.sonarProjectKey} \
+                            -Dsonar.host.url=http://34.207.131.166:9000 \
+                            -Dsonar.login=$SONAR_TOKEN
+                        """
+                    }
+                }
             }
 
             stage('Check SonarQube Quality Gate') {
@@ -50,14 +50,18 @@ def call(Map config) {
                         echo "Waiting for SonarQube analysis to complete..."
                         sleep(time: 30, unit: 'SECONDS') // Wait for Sonar analysis
 
-                        def criticalIssues = org.mycompany.utils.SonarQubeHelper.getCriticalIssues(
-                            config.sonarUrl, config.sonarToken, config.sonarProjectKey
-                        )
+                        def sonarCheck = sh(
+                            script: """
+                                curl -s -u $SONAR_TOKEN: \
+                                'http://34.207.131.166:9000/api/qualitygates/project_status?projectKey=${config.sonarProjectKey}' | jq -r .projectStatus.status
+                            """,
+                            returnStdout: true
+                        ).trim()
 
-                        echo "Critical vulnerabilities found: ${criticalIssues}"
+                        echo "SonarQube Quality Gate Status: ${sonarCheck}"
 
-                        if (criticalIssues > 5) {
-                            error "Pipeline failed: More than 5 critical vulnerabilities found!"
+                        if (sonarCheck == 'ERROR') {
+                            error "Pipeline failed: Quality Gate did not pass!"
                         }
                     }
                 }
