@@ -98,16 +98,19 @@ def call(Map config) {
 
             stage('Push Docker Image to Docker Hub') {
                 steps {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        script {
-                            echo "Logging in to Docker Hub..."
-                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            script {
+                echo "Logging in to Docker Hub..."
+                sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
 
-                            echo "Pushing Docker image..."
-                            sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                        }
-                    }
-                }
+                echo "Tagging the image..."
+                sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_USER}/${config.imageName}:${IMAGE_TAG}"
+
+                echo "Pushing Docker image..."
+                sh "docker push ${DOCKER_USER}/${config.imageName}:${IMAGE_TAG}"
+            }
+        }
+    }
             }
 
             stage('Run Docker Container') {
