@@ -10,27 +10,26 @@ def call(Map config) {
                 }
             }
 
-            stage('Clean') {
-                steps {
-                    echo "Running mvn clean..."
-                    sh 'mvn clean'
-                }
-            }
+            // stage('Clean') {
+            //     steps {
+            //         echo "Running mvn clean..."
+            //         sh 'mvn clean'
+            //     }
+            // }
 
-            stage('Compile') {
-                steps {
-                    echo "Compiling source code..."
-                    sh 'mvn compile'
-                }
-            }
+            // stage('Compile') {
+            //     steps {
+            //         echo "Compiling source code..."
+            //         sh 'mvn compile'
+            //     }
+            // }
 
-            stage('Run Tests') {
+            stage('Run build') {
                 steps {
                     echo "Running tests..."
-                    sh 'mvn test'
+                    sh 'mvn clean install'
                 }
             }
-
             stage('SonarQube Analysis') {
                 steps {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
