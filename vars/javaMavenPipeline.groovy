@@ -3,7 +3,7 @@ def call(Map config) {
         agent any
 
         environment {
-            DOCKER_IMAGE = "your-dockerhub-username/${config.imageName}"
+            DOCKER_IMAGE = "your-dockerhub-username/${config.imageName ?: 'default-image'}"
             IMAGE_TAG = "latest"
         }
 
@@ -52,7 +52,7 @@ def call(Map config) {
                                 mvn sonar:sonar \
                                 -Dsonar.projectKey=${config.sonarProjectKey} \
                                 -Dsonar.host.url=http://34.207.131.166:9000 \
-                                -Dsonar.login=$SONAR_TOKEN
+                                -Dsonar.login=${SONAR_TOKEN}
                             """
                         }
                     }
@@ -63,13 +63,16 @@ def call(Map config) {
                 steps {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         script {
+                            echo "Ensuring jq is installed..."
+                            sh "apt-get update && apt-get install -y jq || true"
+
                             echo "Waiting for SonarQube analysis to complete..."
                             sleep(time: 30, unit: 'SECONDS')
 
                             def sonarCheck = sh(
                                 script: """
-                                    curl -s -u $SONAR_TOKEN: \
-                                    'http://34.207.131.166:9000/api/qualitygates/project_status?projectKey=${config.sonarProjectKey}' | jq -r .projectStatus.status
+                                    curl -s -H "Authorization: Bearer ${SONAR_TOKEN}" \
+                                    "http://34.207.131.166:9000/api/qualitygates/project_status?projectKey=${config.sonarProjectKey}" | jq -r .projectStatus.status
                                 """,
                                 returnStdout: true
                             ).trim()
@@ -84,33 +87,37 @@ def call(Map config) {
                 }
             }
 
-            stage('Build Docker Image') {  // ✅ Step 1: Build Docker Image
+            stage('Build Docker Image') {
                 steps {
                     script {
                         echo "Building Docker image..."
-                        sh "docker build -t $DOCKER_IMAGE:$IMAGE_TAG ."
+                        sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
                     }
                 }
             }
 
-            stage('Push Docker Image to Docker Hub') {  // ✅ Step 2: Push Docker Image
+            stage('Push Docker Image to Docker Hub') {
                 steps {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         script {
                             echo "Logging in to Docker Hub..."
-                            sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+
                             echo "Pushing Docker image..."
-                            sh "docker push $DOCKER_IMAGE:$IMAGE_TAG"
+                            sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
                         }
                     }
                 }
             }
 
-            stage('Run Docker Container') {  // ✅ Step 3: Run Docker Container
+            stage('Run Docker Container') {
                 steps {
                     script {
+                        echo "Stopping existing container if running..."
+                        sh "docker stop my-container || true && docker rm my-container || true"
+
                         echo "Running Docker container..."
-                        sh "docker run -d -p 8080:8080 --name my-container $DOCKER_IMAGE:$IMAGE_TAG"
+                        sh "docker run -d -p 8080:8080 --name my-container ${DOCKER_IMAGE}:${IMAGE_TAG}"
                     }
                 }
             }
