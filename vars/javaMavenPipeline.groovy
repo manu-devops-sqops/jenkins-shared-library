@@ -23,7 +23,12 @@ def call(Map config) {
                     sh 'mvn compile'
                 }
             }
-
+stage('Build') { // ✅ New Build Stage Added
+                steps {
+                    echo "Building the project..."
+                    sh 'mvn package -DskipTests'
+                }
+            }
             stage('Run test') {
                 steps {
                     echo "Running tests..."
