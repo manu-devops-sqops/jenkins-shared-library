@@ -35,13 +35,12 @@ def call(Map config) {
                 steps {
                     script {
                         echo "Running SonarQube analysis..."
-                        sh '''#!/bin/bash
-mvn sonar:sonar \
-    -Dsonar.projectKey=''' + config.sonarProjectKey + ''' \
-    -Dsonar.host.url=''' + config.sonarUrl + ''' \
-    -Dsonar.login=''' + config.sonarToken + '''
-'''
-
+                        sh """
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=${config.sonarProjectKey} \
+                            -Dsonar.host.url=${config.sonarUrl} \
+                            -Dsonar.login=${config.sonarToken}
+                        """
                     }
                 }
             }
