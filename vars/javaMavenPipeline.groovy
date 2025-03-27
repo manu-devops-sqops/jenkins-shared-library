@@ -115,15 +115,15 @@ def call(Map config) {
 
             stage('Run Docker Container') {
                 steps {
-                    script {
-                        echo "Stopping existing container if running..."
-                        sh "docker stop my-container || true && docker rm my-container || true"
+        script {
+            echo "Stopping existing container if running..."
+            sh "docker stop my-container || true"
+            sh "docker rm my-container || true"
 
-                        echo "Running Docker container..."
-                        sh "docker run -d -p 8080:8080 --name my-container ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                    }
-                }
-            }
+            echo "Running Docker container on port 8081..."
+            sh "docker run -d -p 8081:8080 --name my-container ${DOCKER_IMAGE}:${IMAGE_TAG}"
+        }
+    }
         }
 
         post {
