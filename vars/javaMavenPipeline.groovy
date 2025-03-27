@@ -37,7 +37,7 @@ def call(Map config) {
             sh """
                 mvn sonar:sonar \
                 -Dsonar.projectKey=${config.sonarProjectKey} \
-                -Dsonar.host.url=${config.sonarUrl} \
+                -Dsonar.host.url=http://34.207.131.166:9000 \
                 -Dsonar.login=$SONAR_TOKEN
             """
         }
